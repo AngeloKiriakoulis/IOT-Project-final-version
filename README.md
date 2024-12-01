@@ -1,21 +1,56 @@
-# IOT-Project-final-version
+# Final Architecture Analysis for the Group 3 Project:
+## **"BLE-based Indoor Asset and People Tracking"**
 
-Ανάλυση Τελικής Αρχιτεκτονικής για το Project της Ομάδας 3:"BLE-based Indoor asset and people tracking"
+### **Architecture Overview:**
+**Edge → Database → GEM → Widget**
 
-Edge->Database->Gem->Widget
+---
 
-1.Edge-Level Αρχιτεκτονική: Κάναμε χρήση BLE συσκευών για τον εντοπισμό της θέσης asset ή ανθρώπων σε ένα χώρο. Συγκεκριμένα, είχαμε πρόσβαση σε SmartBond™ DA14695 Bluetooth Low Energy 5.2 Daughter-Board/Main-Board και SmartBond™ Wireless Ranging (WiRa™) από την εταιρία ®Renesas.
-Αρχικά υλοποιήσαμε 2 custom BLE Gateway με τη χρήση των DA14695 Main-Boards και το protocol stack implementation του BlueZ. Χρησιμοποιήσαμε τη βιβλιοθήκη pybluez της Python, ώστε να έχουμε πρόσβαση στα BLE δεδομένα που μαζεύει το Main-board. Από εκεί έγινε η επεξεργασία των δεδομένων για 2 διαφορετικά demo. 
-Το πρώτο αφορά τη χρήση και των 2 BLE Gateways για proximity sensing, μέσω μιας απλής ανάγνωσης των RSSI τιμών των BLE Συσκευών. Οι συσκευές αυτές φιλτραριστηκαν, ώστε να παίρνουμε μόνο δεδομένα για 2 DA14695 Daughter-Boards και να εντοπιστεί το RSSI τους. Για συγκεκριμένα εύρη τιμών RSSI, ο αλγόριθμος στο Gateway κατατάσσει το proximity των συσκευών σε 3 τιμές (Immediate,Near,Far). Η υλοποίηση αυτή έχει στόχο να προσομοιάσει μια λύση για proximity sensing, μέσω του BLE Mesh. Kάθε Gateway λειτουργεί ως κόμβος και μπορεί να επικοινωνήσει με το ζητούμενο κόμβο (εδώ τα 2 asset με τα BLE Tags) με τρόπο peer-to-peer. Οι συσκευές που βρίσκονται εκτός εμβέλειας μεταξύ τους μπορούν ακόμα να επικοινωνούν περνώντας μηνύματα Over The Air (OTA) μέσω ενδιάμεσων κόμβων.
-Το δεύτερο demo, προσεγγίζει τον εντοπισμό ανθρώπων/αντικειμένων με μεγαλύτερη ακρίβεια και κάνει χρήση, στο edge επίπεδο, του SmartBond™ Wireless Ranging (WiRa™). Τοποθετώντας στο χώρο τουλάχιστον 3 στατικά Beacons (DA14695 Daughter-Boards), που παίζουν το ρόλο των Responders, μπορούμε να βρούμε τη θέση του WiRa™, που έχει ρυθμιστεί ως Initiator. Από τον υπολογισμό, μέσω BLE Range DTE, 3 αποστάσεων, μπορούμε να εφαρμόσουμε τριγωνισμό και να εξάγουμε τη θέση του WiRa™ στο χώρο. Το WiRa έπειτα στέλνει τα δεδομένα (AltBeacon μήνυμα) στο Gateway που έχουμε υλοποιήσει. Τα δεδομένα αυτά τα κάνουμε parse, για να πάρουμε τις σωστές τιμές από τα σωστά fields του AltBeacon και έπειτα εκτελούμε τριγωνισμό και κανονικοποίηση συντεταγμένων, κάτι που θα μας χρειαστεί για το UI κομμάτι του project.
+### **1. Edge-Level Architecture:**
+We utilized BLE devices to detect the location of assets or people indoors. Specifically, we worked with SmartBond™ DA14695 Bluetooth Low Energy 5.2 Daughter Boards/Main Boards and SmartBond™ Wireless Ranging (WiRa™) technology provided by Renesas.  
 
-2.Cloud: PUT requests στέλνονται απο το edge προς την πλαρφόρμα της YODIWO (xρησιμοποιήσαμε την εφαρμογή postman για να μετατρέψουμε το αίτημα στην επιθυμητή γλώσσα προγραμματισμού, python). Στην βάση δεδομένων της YODIWO έχουμε ορίσει κατάλληλα τύπους assets ,ανάλογα το demo, με συγκεκριμένα extra fields (attributes των assets).Τα PUT requests ανανεώνουν σε τακτά χρονικά διαστήματα αυτά τα fields. Για το πρώτο demo χρειαζόμαστε asset με 4 extra fields(id,name,proximity_level_from_gateway1,proximity_level_from_gateway2) ενώ για το δεύτερο demo χρειαζόμαστε 2 extra fields (xcoordinate,ycoordinate). Αφου έχουμε εξασφαλίσει ότι τα δεδομένα στην βάση μας ανανεώνονται σωστά μένει να τα τροφοδοτήσουμε κατάλληλα στα widget της πλατφόρμας της YODIWO.
-Τα widget αποτελούν το UI κομμάτι της υλοποίησης μας. Χρησιμοποιούμε 1 widget για κάθε demo (Asset tracker widget και Maps widget). 
-Το κάθε widget χρειάζεται να προγραμματιστεί μέσω ενός κατάλληλου GEM, το οποίο ορίζουμε να παίρνει τα κατάλληλα δεδομένα απο την βάση και να τα δείχνει στο widget με τον επιθυμητό τρόπο. Στην ουσία το GEM μας επιτρέπει να αυτοματοποιούμε την αναπαραγωγή δεδομένων στο widget με δεδομένα που αντλεί απο την βάση.
-Το κάθε gem αποτελείται απο 5 στάδια: Data SRC,JS Preperation,Query,JS Handling, Data DST. Αναλυτικά:
+#### **BLE Gateways:**
+- **Custom Gateways Implementation:**
+  - Two custom BLE Gateways were implemented using DA14695 Main Boards with the BlueZ protocol stack.
+  - The Python `pybluez` library was used to access BLE data from the Main Board for two distinct demos:
 
-Data SRC: Σε αυτό το στάδιο συγκεντρώνουμε τα κατάλληλα δεδομένα του account μας στην πλατφόρμα της Yodiwo (πχ OrgId,RestAPIBasePath κ.α.), τα οποία θα χρειαστούμε στα επόμενα στάδια.
-JS Preperation: Σε αυτό το στάδιο επεξεργαζόμαστε απλά τα results απο το προηγούμενο στάδιο και τα τροφοδοτούμε με κατάλληλο τρόπο στο επόμενο στάδιο.
-Query: Σε αυτό το στάδιο κάνουμε ένα POST request σε κατάλληλο endpoint της YODIWO για να αντλήσουμε τα δεδομένα που βρίσκονται στην βάση και αφορούν τα assets μας.(POST https://$(config.RestAPIBasePath)/fm/assets/search).Σε αυτό το αίτημα ως body χρησιμοποιούμε πληροφορία που έχει προέλθει απο προηγούμενα στάδια ώστε να πάρουμε μόνο τα δεδομένα που μας ενδιαφέρουν.
-JS Handling: Σε αυτό το στάδιο γράφουμε τον κώδικα σε JavaScript που χρειάζεται για να τροφοδοτήσουμε το widget που θέλουμε με τα δεδομένα της βάσης.
-Data DST: Στο τελευταίο αυτό στάδιο απλά αντιστοιχούμε τις return μεταβλητές του προηγούμενου βήματος σε input ports του widget.
+    1. **Proximity Sensing Demo:**
+       - BLE signals were filtered to focus on two specific DA14695 Daughter Boards.
+       - RSSI values were used to classify device proximity into three levels: *Immediate, Near,* and *Far*.
+       - This demo mimicked a BLE Mesh solution where each Gateway acted as a node capable of peer-to-peer communication or relaying messages Over-The-Air (OTA) through intermediate nodes.
+
+    2. **Precise Localization Demo:**
+       - Leveraged WiRa™ for high-accuracy localization.
+       - At least three static beacons (DA14695 Daughter Boards) were placed as responders, while one WiRa™ device configured as an initiator calculated distances to the beacons.
+       - Using BLE Range DTE data, triangulation was performed to determine the WiRa™ device’s coordinates.
+       - Parsed AltBeacon messages were sent to the custom Gateway for further processing, such as normalization of coordinates for use in the project’s UI.
+
+---
+
+### **2. Cloud Integration:**
+- **Data Transfer to Cloud:**
+  - PUT requests sent from the edge to the Yodiwo platform using Postman for request formatting in Python.
+  - The Yodiwo database was configured with asset types and extra fields depending on the demo:
+    - *Proximity Sensing Demo:* Extra fields included `id`, `name`, `proximity_level_from_gateway1`, and `proximity_level_from_gateway2`.
+    - *Localization Demo:* Extra fields included `xcoordinate` and `ycoordinate`.
+  - These fields were regularly updated to ensure the database remained in sync with real-time asset data.
+
+- **UI Implementation:**
+  - Two widgets were used for visualization: an *Asset Tracker Widget* for the Proximity Sensing Demo and a *Maps Widget* for the Localization Demo.
+  - Data for these widgets was processed through a custom GEM, which automated data retrieval and rendering.
+
+---
+
+### **3. GEM Workflow:**
+The GEM was composed of five stages, facilitating the connection between the database and the UI widgets:
+
+1. **Data SRC:** Collect account-specific data (e.g., `OrgId`, `RestAPIBasePath`) for use in subsequent steps.
+2. **JS Preparation:** Process results from the previous stage and prepare them for querying.
+3. **Query:** Perform POST requests to Yodiwo's API endpoint (`https://$(config.RestAPIBasePath)/fm/assets/search`) to fetch relevant asset data.
+4. **JS Handling:** Write JavaScript code to transform database data into the appropriate format for the widget.
+5. **Data DST:** Map the output variables from the previous stage to the input ports of the widget for final display.
+
+---
+
+### **Summary:**
+This project demonstrated the implementation of a BLE-based asset tracking system that utilized edge computing for real-time processing and cloud integration for visualization. The architecture provided a scalable, efficient solution for both proximity sensing and precise localization.
