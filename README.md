@@ -1,4 +1,4 @@
-# Final Architecture Analysis for the Group 3 Project:
+# Final Architecture Analysis for the Project:
 ## **"BLE-based Indoor Asset and People Tracking"**
 
 ### **Architecture Overview:**
